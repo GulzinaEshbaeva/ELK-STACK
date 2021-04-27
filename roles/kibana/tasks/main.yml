@@ -1,0 +1,38 @@
+---
+- name: Install kibana
+  yum: 
+    name: kibana
+    state: latest 
+    update_cache: yes
+
+- name: Create kibana config
+  template:
+    src: kibana.config.j2
+    dest: /etc/kibana/kibana.yml
+  notify: Restart kibana
+
+- name: Force systemd to reread configs
+  systemd: daemon_reload=yes
+
+- name: Start and Enable Kibana
+  service:
+    name: kibana.service
+    state: started
+    enabled: yes
+
+- name: Create nginx.conf file
+  template:
+    src: elk.conf.j2
+    dest: /etc/nginx/nginx.conf
+    # dest: /etc/nginx/conf.d/elk.conf
+  # notify: Restart Nginx
+
+
+- name: Cloning certbot to instnace
+  ansible.builtin.git:
+    repo: 'https://github.com/certbot/certbot'
+    dest: /opt/letsencrypt
+
+- name: Generating certs for nginx 
+  command: certbot run -n --agree-tos --nginx -d {{ host_name }} -d www.{{ host_name }} --email jebikirogi@gmail.com
+
